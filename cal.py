@@ -1,5 +1,4 @@
 import math
-
 class Value:
 
     def __init__(self, data, _children=(), _op=''):
@@ -16,7 +15,7 @@ class Value:
 
     # addition
     def __add__(self, other):
-        other = other if isinstance(other, Value) else Value(other)
+        other = other if isinstance(other, Value)    else Value(other)
 
         out = Value(self.data + other.data, (self, other), '+')
 
@@ -104,6 +103,53 @@ class Value:
         for node in reversed(topo):
             node._backward()
 
+    def __relu__(self):
+        out = Value(0 if self.data < 0 else self.data, (self,), 'ReLU')
+
+        def _backward():
+            self.grad += (out.data > 0) * out.grad
+
+        out._backward = _backward
+        return out
+    
+    def __exp__(self):
+        x = self.data
+        out = Value(math.exp(x), (self,), 'exp')
+
+        def _backward():
+            self.grad += out.data * out.grad
+
+        out._backward = _backward
+        return out
+    
+    def __log__(self):
+        x = self.data
+        out = Value(math.log(x), (self,), 'log')
+
+        def _backward():
+            self.grad += (1/x) * out.grad
+
+        out._backward = _backward
+        return out
+    
+    def __sigmoid__(self):
+        x = self.data
+        s = 1 / (1 + math.exp(-x))
+        out = Value(s, (self,), 'sigmoid')
+
+        def _backward():
+            self.grad += s * (1 - s) * out.grad
+
+        out._backward = _backward
+        return out
+    
+    def __radd__(self, other):
+        return self + other 
+    
+    def __rtruediv__(self, other):
+        return other * self**-1
+    
+    
 if __name__ == "__main__":
     x1 = Value(2.0)
     x2 = Value(0.0)
@@ -117,6 +163,7 @@ if __name__ == "__main__":
     y = n.tanh()
 
     y.backward()
+
 
     print(x1)
     print(w1)
